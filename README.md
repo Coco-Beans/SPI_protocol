@@ -1,63 +1,28 @@
-# Parameterizable SPI Master & Slave Architecture in Verilog
+# SPI Protocol
 
-A robust, fully parameterizable, and synchronous implementation of the **Serial Peripheral Interface (SPI)** protocol in Verilog. This repository features a configurable SPI Master controller with an integrated clock divider, a synchronous SPI Slave peripheral model, and an automated verification testbench.
-
-Designed for synthesis on modern FPGA devices (Xilinx, Intel, Lattice) and integration into ASIC system-on-chip (SoC) architectures.
+A lightweight, parameterizable Verilog implementation of the **Serial Peripheral Interface (SPI)** protocol operating in **SPI Mode 0 (CPOL = 0, CPHA = 0)**. The repository includes an SPI Master controller, an SPI Slave peripheral, and a full self-checking testbench.
 
 ---
 
-## 📌 Table of Contents
-- [Overview & SPI Protocol Primer](#-overview--spi-protocol-primer)
-- [System Architecture](#-system-architecture)
-  - [SPI Master Module (`spi_master.v`)](#1-spi-master-module-spi_masterv)
-  - [SPI Slave Module (`spi_slave.v`)](#2-spi-slave-module-spi_slavev)
-- [Finite State Machine (FSM) Design](#-finite-state-machine-fsm-design)
-- [Timing Diagrams & Waveforms](#-timing-diagrams--waveforms)
-- [Module Interfaces & Specifications](#-module-interfaces--specifications)
-- [Verification & Simulation](#-verification--simulation)
-- [Synthesis & Resource Utilization](#-synthesis--resource-utilization)
-- [License](#-license)
+## Features
+
+- **Parameterizable Configuration:** Configurable system clock frequency (`CLK_FREQ`), SPI clock frequency (`SPI_FREQ`), and payload width (`DATA_WIDTH`).
+- **Synchronous Full-Duplex Transfer:** Simultaneous MOSI (Master Out Slave In) transmission and MISO (Master In Slave Out) reception.
+- **SPI Mode 0 Standard:**
+  - Clock Polarity (`CPOL = 0`): `SCLK` stays LOW when idle.
+  - Clock Phase (`CPHA = 0`): Data sampled on **rising edge**, shifted on **falling edge**.
+- **Internal Clock Generation:** Glitch-free `SCLK` generation using a counter-based clock divider.
+- **Complete Testbench Included:** Simulates multiple sequential 8-bit transfers and logs transmitted/received values to the console.
 
 ---
 
-## 📌 Overview & SPI Protocol Primer
-
-The Serial Peripheral Interface (SPI) is a synchronous, four-wire, full-duplex serial communication interface commonly used to communicate between microcontrollers, FPGAs, sensors, EEPROMs, and display controllers.
-
-### Protocol Modes Summary
-SPI operates across 4 primary modes defined by Clock Polarity (**CPOL**) and Clock Phase (**CPHA**):
-
-| SPI Mode | CPOL (Idle Clock State) | CPHA (Clock Edge Sampling) | Sample Edge | Shift Edge |
-| :---: | :---: | :---: | :---: | :---: |
-| **Mode 0** | **`0` (LOW)** | **`0` (Leading Edge)** | **Rising Edge** | **Falling Edge** |
-| Mode 1 | `0` (LOW) | `1` (Trailing Edge) | Falling Edge | Rising Edge |
-| Mode 2 | `1` (HIGH) | `0` (Leading Edge) | Falling Edge | Rising Edge |
-| Mode 3 | `1` (HIGH) | `1` (Trailing Edge) | Rising Edge | Falling Edge |
-
-> **This implementation uses SPI Mode 0 (CPOL = 0, CPHA = 0).** Data is shifted out on the falling edge of `SCLK` and sampled on the rising edge of `SCLK`.
-
----
-
-## 🔌 System Architecture
-
-The project consists of three core components: an **SPI Master Controller**, an **SPI Slave Model**, and a **Testbench Top**.
+## Repository Structure
 
 ```text
-+-----------------------------------------------------------------------------------------+
-|                                    TB_SPI TESTBENCH                                     |
-|                                                                                         |
-|  +----------------------------------+            +-----------------------------------+  |
-|  |           SPI MASTER             |            |             SPI SLAVE             |  |
-|  |                                  |   sclk     |                                   |  |
-|  |                      sclk   o----+----------->| i   sclk                          |  |
-|  |                      cs_n   o----+----------->| i   cs_n                          |  |
-|  |                      mosi   o----+----------->| i   mosi                          |  |
-|  |                      miso   i<---+-----------+o   miso                            |  |
-|  |                                  |            |                                   |  |
-|  |  +----------------------------+  |            |  +-----------------------------+  |  |
-|  |  | Clock Divider & Edge Detect|  |            |  | Shift Register Logic        |  |  |
-|  |  +----------------------------+  |            |  +-----------------------------+  |  |
-|  |  | 4-State Control FSM        |  |            +-----------------------------------+  |
-|  |  +----------------------------+  |                                                   |
-|  +----------------------------------+                                                   |
-+-----------------------------------------------------------------------------------------+
+.
+├── rtl/
+│   ├── spi_master.v    # SPI Master controller with FSM and clock divider
+│   └── spi_slave.v     # Simple SPI Slave shift-register model
+├── sim/
+│   └── tb_spi.v        # Testbench with task-based stimulus generation
+└── README.md           # Project documentation
