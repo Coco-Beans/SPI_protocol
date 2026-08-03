@@ -1,28 +1,49 @@
 # SPI Master-Slave Communication in Verilog
 
-A lightweight, parameterizable Verilog implementation of the **Serial Peripheral Interface (SPI)** protocol operating in **SPI Mode 0 (CPOL = 0, CPHA = 0)**. The repository includes an SPI Master controller, an SPI Slave peripheral, and a full self-checking testbench.
+## Overview
+Designed and implemented a parameterized **SPI (Serial Peripheral Interface)** Master and Slave in Verilog HDL to demonstrate full-duplex serial communication. The master generates the SPI clock, controls chip select, transmits data over MOSI, and receives data over MISO. A testbench verifies multiple data transfers.
 
----
+## Features
+- Parameterized design (`DATA_WIDTH`, `CLK_FREQ`, `SPI_FREQ`)
+- Full-duplex SPI communication
+- FSM-based SPI Master
+- Clock divider for SPI clock generation
+- Shift register-based serial transmission and reception
+- Edge detection for data shifting and sampling
+- Functional testbench with multiple test cases
 
-## 📌 Features
+## Project Structure
+```
+SPI/
+├── spi_master.v      // SPI Master
+├── spi_slave.v       // SPI Slave
+├── tb_spi.v          // Testbench
+└── README.md
+```
 
-- **Parameterizable Configuration:** Configurable system clock frequency (`CLK_FREQ`), SPI clock frequency (`SPI_FREQ`), and payload width (`DATA_WIDTH`).
-- **Synchronous Full-Duplex Transfer:** Simultaneous MOSI (Master Out Slave In) transmission and MISO (Master In Slave Out) reception.
-- **SPI Mode 0 Standard:**
-  - Clock Polarity (`CPOL = 0`): `SCLK` stays LOW when idle.
-  - Clock Phase (`CPHA = 0`): Data sampled on **rising edge**, shifted on **falling edge**.
-- **Internal Clock Generation:** Glitch-free `SCLK` generation using a counter-based clock divider.
-- **Complete Testbench Included:** Simulates multiple sequential 8-bit transfers and logs transmitted/received values to the console.
+## Working
+1. The master waits for the `start` signal.
+2. On start, `CS_N` is asserted low and transmit data is loaded.
+3. The clock divider generates the SPI clock (`SCLK`).
+4. Data is shifted out on **MOSI** and sampled on **MISO** simultaneously.
+5. After all bits are transferred, `done` is asserted and the received data is stored.
 
----
+## Parameters
 
-## 📂 Repository Structure
+| Parameter | Default |
+|----------|---------|
+| `DATA_WIDTH` | 8 |
+| `CLK_FREQ` | 50 MHz |
+| `SPI_FREQ` | 5 MHz |
 
-```text
-.
-├── rtl/
-│   ├── spi_master.v    # SPI Master controller with FSM and clock divider
-│   └── spi_slave.v     # Simple SPI Slave shift-register model
-├── sim/
-│   └── tb_spi.v        # Testbench with task-based stimulus generation
-└── README.md           # Project documentation
+## Tools Used
+- Verilog HDL
+- Xilinx Vivado
+- EDA Playground
+
+## Future Improvements
+- Support all SPI modes (CPOL/CPHA)
+- Multi-slave support
+- Variable data widths
+- FIFO buffering
+- Continuous burst transfers
