@@ -1,49 +1,63 @@
-# SPI Master-Slave Communication in Verilog
+# Parameterizable SPI Master & Slave Architecture in Verilog
 
-## Overview
-Designed and implemented a parameterized **SPI (Serial Peripheral Interface)** Master and Slave in Verilog HDL to demonstrate full-duplex serial communication. The master generates the SPI clock, controls chip select, transmits data over MOSI, and receives data over MISO. A testbench verifies multiple data transfers.
+A robust, fully parameterizable, and synchronous implementation of the **Serial Peripheral Interface (SPI)** protocol in Verilog. This repository features a configurable SPI Master controller with an integrated clock divider, a synchronous SPI Slave peripheral model, and an automated verification testbench.
 
-## Features
-- Parameterized design (`DATA_WIDTH`, `CLK_FREQ`, `SPI_FREQ`)
-- Full-duplex SPI communication
-- FSM-based SPI Master
-- Clock divider for SPI clock generation
-- Shift register-based serial transmission and reception
-- Edge detection for data shifting and sampling
-- Functional testbench with multiple test cases
+Designed for synthesis on modern FPGA devices (Xilinx, Intel, Lattice) and integration into ASIC system-on-chip (SoC) architectures.
 
-## Project Structure
-```
-SPI/
-├── spi_master.v      // SPI Master
-├── spi_slave.v       // SPI Slave
-├── tb_spi.v          // Testbench
-└── README.md
-```
+---
 
-## Working
-1. The master waits for the `start` signal.
-2. On start, `CS_N` is asserted low and transmit data is loaded.
-3. The clock divider generates the SPI clock (`SCLK`).
-4. Data is shifted out on **MOSI** and sampled on **MISO** simultaneously.
-5. After all bits are transferred, `done` is asserted and the received data is stored.
+## 📌 Table of Contents
+- [Overview & SPI Protocol Primer](#-overview--spi-protocol-primer)
+- [System Architecture](#-system-architecture)
+  - [SPI Master Module (`spi_master.v`)](#1-spi-master-module-spi_masterv)
+  - [SPI Slave Module (`spi_slave.v`)](#2-spi-slave-module-spi_slavev)
+- [Finite State Machine (FSM) Design](#-finite-state-machine-fsm-design)
+- [Timing Diagrams & Waveforms](#-timing-diagrams--waveforms)
+- [Module Interfaces & Specifications](#-module-interfaces--specifications)
+- [Verification & Simulation](#-verification--simulation)
+- [Synthesis & Resource Utilization](#-synthesis--resource-utilization)
+- [License](#-license)
 
-## Parameters
+---
 
-| Parameter | Default |
-|----------|---------|
-| `DATA_WIDTH` | 8 |
-| `CLK_FREQ` | 50 MHz |
-| `SPI_FREQ` | 5 MHz |
+## 📌 Overview & SPI Protocol Primer
 
-## Tools Used
-- Verilog HDL
-- Xilinx Vivado
-- EDA Playground
+The Serial Peripheral Interface (SPI) is a synchronous, four-wire, full-duplex serial communication interface commonly used to communicate between microcontrollers, FPGAs, sensors, EEPROMs, and display controllers.
 
-## Future Improvements
-- Support all SPI modes (CPOL/CPHA)
-- Multi-slave support
-- Variable data widths
-- FIFO buffering
-- Continuous burst transfers
+### Protocol Modes Summary
+SPI operates across 4 primary modes defined by Clock Polarity (**CPOL**) and Clock Phase (**CPHA**):
+
+| SPI Mode | CPOL (Idle Clock State) | CPHA (Clock Edge Sampling) | Sample Edge | Shift Edge |
+| :---: | :---: | :---: | :---: | :---: |
+| **Mode 0** | **`0` (LOW)** | **`0` (Leading Edge)** | **Rising Edge** | **Falling Edge** |
+| Mode 1 | `0` (LOW) | `1` (Trailing Edge) | Falling Edge | Rising Edge |
+| Mode 2 | `1` (HIGH) | `0` (Leading Edge) | Falling Edge | Rising Edge |
+| Mode 3 | `1` (HIGH) | `1` (Trailing Edge) | Rising Edge | Falling Edge |
+
+> **This implementation uses SPI Mode 0 (CPOL = 0, CPHA = 0).** Data is shifted out on the falling edge of `SCLK` and sampled on the rising edge of `SCLK`.
+
+---
+
+## 🔌 System Architecture
+
+The project consists of three core components: an **SPI Master Controller**, an **SPI Slave Model**, and a **Testbench Top**.
+
+```text
++-----------------------------------------------------------------------------------------+
+|                                    TB_SPI TESTBENCH                                     |
+|                                                                                         |
+|  +----------------------------------+            +-----------------------------------+  |
+|  |           SPI MASTER             |            |             SPI SLAVE             |  |
+|  |                                  |   sclk     |                                   |  |
+|  |                      sclk   o----+----------->| i   sclk                          |  |
+|  |                      cs_n   o----+----------->| i   cs_n                          |  |
+|  |                      mosi   o----+----------->| i   mosi                          |  |
+|  |                      miso   i<---+-----------+o   miso                            |  |
+|  |                                  |            |                                   |  |
+|  |  +----------------------------+  |            |  +-----------------------------+  |  |
+|  |  | Clock Divider & Edge Detect|  |            |  | Shift Register Logic        |  |  |
+|  |  +----------------------------+  |            |  +-----------------------------+  |  |
+|  |  | 4-State Control FSM        |  |            +-----------------------------------+  |
+|  |  +----------------------------+  |                                                   |
+|  +----------------------------------+                                                   |
++-----------------------------------------------------------------------------------------+
